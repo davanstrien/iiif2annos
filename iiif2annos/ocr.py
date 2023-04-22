@@ -94,8 +94,7 @@ def ocr(anno_uri, outputDir, manifestURI, lang=None, confidence=False):
     print(f"Loading: {manifestURI}")
     manifest = requests.get(manifestURI).json()
 
-    canvasNo = 0
-    for canvas in canvases(manifest):
+    for canvasNo, canvas in enumerate(canvases(manifest)):
         service = get_service(canvas)
 
         url = buildIIIFImage(service)
@@ -104,10 +103,11 @@ def ocr(anno_uri, outputDir, manifestURI, lang=None, confidence=False):
         img = Image.open(BytesIO(response.content))
 
         print("Running OCR")
-        if lang:
-            data = pytesseract.image_to_data(img, output_type=Output.DICT, lang=lang)
-        else:
-            data = pytesseract.image_to_data(img, output_type=Output.DICT)
+        data = (
+            pytesseract.image_to_data(img, output_type=Output.DICT, lang=lang)
+            if lang
+            else pytesseract.image_to_data(img, output_type=Output.DICT)
+        )
         annos = []
         annoNo = 0
         for i in range(len(data["text"])):
@@ -136,8 +136,6 @@ def ocr(anno_uri, outputDir, manifestURI, lang=None, confidence=False):
             json.dump(annotations, f, indent=4)
 
         addAnnotations(canvas, annotationsID)
-        canvasNo += 1
-
     with open(f"{outputDir}/manifest.json", "w") as f:
         json.dump(manifest, f, indent=4)
 
